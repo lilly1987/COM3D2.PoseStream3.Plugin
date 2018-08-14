@@ -253,305 +253,323 @@ namespace COM3D2.PoseStream.Plugin
 
 		public String errorFile = "";
 
-        // 실제 파일 생성, 기존 기능
-		private bool makeAnmFile(String[] ss)
-		{
-            // 본 데이터 목록 저장용
-			List<BoneDataA> bda = new List<BoneDataA>();
-            // 해더
-			byte[] header = new byte[15];
-			bool isFirst = true;
-			//読み込み
-			//읽기
-			foreach (String s in ss)
-			{
-                Debug.Log("String s " + s);
+        private bool makeAnmFile(String[] ss)
+        {
+            List<BoneDataA> bda = new List<BoneDataA>();
+            byte[] header = new byte[15];
+            bool isFirst = true;
+            //読み込み
+            //읽기
+            foreach (String s in ss)
+            {
                 using (BinaryReader r = new BinaryReader(File.OpenRead(getPoseDataPath(true) + s)))
-				{
-					try
-					{
-						if (isFirst)
-						{
-                            //Debug.Log("isFirst" );
+                {
+                    try
+                    {
+                        if (isFirst)
+                        {
                             isFirst = false;
-							//最初のファイルでヘッダー部分を決定
-							//첫 번째 파일 헤더 부분을 결정
+                            //最初のファイルでヘッダー部分を決定
+                            //첫 번째 파일 헤더 부분을 결정
                             //14바이트
-							for (int i = 0; i < 15; i++)
-							{
-								header[i] = r.ReadByte();
-							}
-							byte t = r.ReadByte();
-							while (true)
-							{
-								if (t == 1)
-								{
-                                    //Debug.Log("isFirst t == 1");
-									//A先頭部分
-									//A 선두 부분
-									t = r.ReadByte();
-									byte c = 0;
-                                    String name;
-                                    bool isB = false;
-                                    c = r.ReadByte();
-									if (c == 1)
-									{
-										isB = true;
-										name = "";
-									}
-									else
-									{
-										isB = false;
-										name = "" + (char)c;
-										t--;
-									}
-									for (int i = 0; i < t; i++)
-									{
-										c = r.ReadByte();
-										name += (char)c;
-									}
-                                    BoneDataA a = null;
-                                    a = new BoneDataA();
-                                    a.name = name;
-                                    a.isB = isB;
-                                    a.b = new List<BoneDataB>();
-									//B部分
-									while(true)
-									{
-										t = r.ReadByte();
-										if (t >= 64)
-										{
-                                            BoneDataBadd(true, new BoneDataB(), r, a, true, t,0);                                            
-										}
-										else
-										{
-                                            break;
-										}
-									}
-                                    //Debug.Log("isFirst bda.Add(a)" );
-                                    bda.Add(a);
-								}
-								else
-								{
-                                    //Debug.Log("isFirst t == 1 else");
-                                    break;
-								}
-							}
-						}
-						else
-						{
-                            //Debug.Log("isFirst else");
-                            int time = get00000000byInt(s);
-							//最初以外はヘッダー部分を読み飛ばす
-							//첫 이외는 헤더 부분을 건너
-							r.ReadBytes(15);
-							byte t = r.ReadByte();
-							while (true)
-							{
-								if (t == 1)
-								{
-                                    //Debug.Log("isFirst else t == 1");
+                            for (int i = 0; i < 15; i++)
+                            {
+                                header[i] = r.ReadByte();
+                            }
+                            byte t = r.ReadByte();
+                            while (true)
+                            {
+                                if (t == 1)
+                                {
+                                    BoneDataA a = new BoneDataA();
                                     //A先頭部分
                                     //A 선두 부분
                                     t = r.ReadByte();
-									byte c = 0;
-									String name;
-									bool isB = false;
-									c = r.ReadByte();
-									if (c == 1)
-									{
-										isB = true;
-										name = "";
-									}
-									else
-									{
-										isB = false;
-										name = "" + (char)c;
-										t--;
-									}
-									for (int i = 0; i < t; i++)
-									{
-										c = r.ReadByte();
-										name += (char)c;
-									}
-                                    //Debug.Log("isFirst else t == 1 name"+ name);
-                                    // 같은 본 찿기??
-                                    BoneDataA a = null;
-									foreach (BoneDataA tmp in bda)
-									{
-                                        //Debug.Log("isFirst else t == 1 tmp.name" + tmp.name);
-                                        if (tmp.name.Equals(name))
-										{
-											a = tmp;
-											break;
-										}
-									}
-                                    // 같은 본이 없을경우
-									if (a == null)
-									{
-                                        //Debug.Log("isFirst else a == null");
-                                        a = new BoneDataA();
-										a.name = name;
-										a.isB = isB;
-										a.b = new List<BoneDataB>();
-										//B部分
-										//파트 B
-										while (true)
-										{
-											t = r.ReadByte();
-											if (t >= 64)
-											{
-                                                //Debug.Log("isFirst else t >= 64" );
-                                                BoneDataBadd(false, new BoneDataB(), r, a, true, t,time);                                                
-											}
-											else
-											{
-                                                //Debug.Log("isFirst else t >= 64 else");
-                                                break;
-											}
-										}
-                                       // Debug.Log("isFirst else bda.Add(a)");
-                                        bda.Add(a);
-									}
-                                    // 같은 본이 있을경우
+                                    byte c = 0;
+                                    c = r.ReadByte();
+                                    if (c == 1)
+                                    {
+                                        a.isB = true;
+                                        a.name = "";
+                                    }
                                     else
                                     {
-                                        //Debug.Log("isFirst else a == null else");
+                                        a.isB = false;
+                                        a.name = "" + (char)c;
+                                        t--;
+                                    }
+                                    for (int i = 0; i < t; i++)
+                                    {
+                                        c = r.ReadByte();
+                                        a.name += (char)c;
+                                    }
+                                    a.b = new List<BoneDataB>();
+                                    //B部分
+                                    while (true)
+                                    {
+                                        t = r.ReadByte();
+                                        if (t >= 64)
+                                        {
+                                            BoneDataB b = new BoneDataB();
+                                            b.index = t;
+                                            int tmpf = r.ReadByte();
+                                            r.ReadByte();
+                                            r.ReadByte();
+                                            r.ReadByte();
+                                            //C部分
+                                            bool firstFrame = true;
+                                            for (int i = 0; i < tmpf; i++)
+                                            {
+                                                if (firstFrame)
+                                                {
+                                                    firstFrame = false;
+                                                    b.c = new List<BoneDataC>();
+
+                                                    BoneDataCadd(0, r, b);
+                                                }
+                                                else
+                                                {
+                                                    r.ReadBytes(16);
+                                                }
+                                            }
+                                            a.b.Add(b);
+                                        }
+                                        else
+                                        {
+                                            break;
+                                        }
+                                    }
+
+                                    bda.Add(a);
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            int time = get00000000byInt(s);
+                            //最初以外はヘッダー部分を読み飛ばす
+                            //첫 이외는 헤더 부분을 건너
+                            r.ReadBytes(15);
+                            byte t = r.ReadByte();
+                            while (true)
+                            {
+                                if (t == 1)
+                                {
+                                    //A先頭部分
+                                    //A 선두 부분
+                                    t = r.ReadByte();
+                                    byte c = 0;
+                                    String name;
+                                    bool isB = false;
+                                    c = r.ReadByte();
+                                    if (c == 1)
+                                    {
+                                        isB = true;
+                                        name = "";
+                                    }
+                                    else
+                                    {
+                                        isB = false;
+                                        name = "" + (char)c;
+                                        t--;
+                                    }
+                                    for (int i = 0; i < t; i++)
+                                    {
+                                        c = r.ReadByte();
+                                        name += (char)c;
+                                    }
+                                    BoneDataA a = null;
+                                    foreach (BoneDataA tmp in bda)
+                                    {
+                                        if (tmp.name.Equals(name))
+                                        {
+                                            a = tmp;
+                                            break;
+                                        }
+                                    }
+                                    if (a == null)
+                                    {
+                                        a = new BoneDataA();
+                                        a.name = name;
+                                        a.isB = isB;
+                                        a.b = new List<BoneDataB>();
+                                        //B部分
+                                        //파트 B
+                                        while (true)
+                                        {
+                                            t = r.ReadByte();
+                                            if (t >= 64)
+                                            {
+                                                BoneDataB b = new BoneDataB();
+                                                b.index = t;
+                                                int tmpf = r.ReadByte();
+                                                r.ReadByte();
+                                                r.ReadByte();
+                                                r.ReadByte();
+                                                //C部分
+                                                bool firstFrame = true;
+                                                for (int i = 0; i < tmpf; i++)
+                                                {
+                                                    if (firstFrame)
+                                                    {
+                                                        firstFrame = false;
+                                                        b.c = new List<BoneDataC>();
+
+                                                        BoneDataCadd(0, r, b);
+                                                    }
+                                                    else
+                                                    {
+                                                        BoneDataCadd(time, r, b);
+                                                    }
+                                                }
+                                                a.b.Add(b);
+                                            }
+                                            else
+                                            {
+                                                break;
+                                            }
+                                        }
+                                        bda.Add(a);
+                                    }
+                                    else
+                                    {
                                         //B部分
                                         while (true)
-										{
-											t = r.ReadByte();
-											if (t >= 64)
-											{
-                                                // 같은 본 찿기
-												BoneDataB b = null;
-												foreach (BoneDataB tmpb in a.b)
-												{
-													if (t == tmpb.index)
-													{
-														b = tmpb;
-														break;
-													}
-												}
-												if (b == null)
-												{
-                                                    BoneDataBadd(false, new BoneDataB(), r, a, true, t, time);                                                    
-												}
-												else
-												{
-                                                    BoneDataBadd(true,  b, r, a, true, t, time);                                                    
-												}
-											}
-											else
-											{
-												break;
-											}
-										}
-									}
+                                        {
+                                            t = r.ReadByte();
+                                            if (t >= 64)
+                                            {
+                                                BoneDataB b = null;
+                                                foreach (BoneDataB tmpb in a.b)
+                                                {
+                                                    if (t == tmpb.index)
+                                                    {
+                                                        b = tmpb;
+                                                        break;
+                                                    }
+                                                }
+                                                if (b == null)
+                                                {
+                                                    b = new BoneDataB();
+                                                    b.index = t;
+                                                    int tmpf = r.ReadByte();
+                                                    r.ReadByte();
+                                                    r.ReadByte();
+                                                    r.ReadByte();
+                                                    //C部分
+                                                    bool firstFrame = true;
+                                                    for (int i = 0; i < tmpf; i++)
+                                                    {
+                                                        if (firstFrame)
+                                                        {
+                                                            firstFrame = false;
+                                                            b.c = new List<BoneDataC>();
 
-								}
-								else
-								{
-									break;
-								}
-							}
-						}
-					}
-					catch (Exception)
-					{
-						errorFile = "ポーズ「" + s + "」の読み込み中にエラーが発生しました\n로드하는 동안 오류가 발생했습니다";
-						return false;
-					}
-				}
-			}
+                                                            BoneDataCadd(0, r, b);
+                                                        }
+                                                        else
+                                                        {
+                                                            BoneDataCadd(time, r, b);
+                                                        }
+                                                    }
+                                                    a.b.Add(b);
+                                                }
+                                                else
+                                                {
+                                                    int tmpf = r.ReadByte();
+                                                    r.ReadByte();
+                                                    r.ReadByte();
+                                                    r.ReadByte();
+                                                    //C部分
+                                                    bool firstFrame = true;
+                                                    for (int i = 0; i < tmpf; i++)
+                                                    {
+                                                        if (firstFrame)
+                                                        {
+                                                            firstFrame = false;
+
+                                                            BoneDataCadd(time, r, b);
+                                                        }
+                                                        else
+                                                        {
+                                                            r.ReadBytes(16);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        errorFile = "ポーズ「" + s + "」の読み込み中にエラーが発生しました\n로드하는 동안 오류가 발생했습니다";
+                        return false;
+                    }
+                }
+            }
 
             //結合
             //결합
             bool isExist = File.Exists(getPoseDataPath(true) + anmName + ".anm");
-			using (BinaryWriter w = new BinaryWriter(File.Create(getPoseDataPath(true) + anmName + ".anm")))
-			{
-				try
-				{
-					w.Write(header);
-					foreach (BoneDataA a in bda)
-					{
-						w.Write(a.outputABinary());
-					}
-					w.Write((byte)0);
-					w.Write((byte)0);
-					w.Write((byte)0);
-				}
-				catch (Exception)
-				{
-					errorFile = "モーション「" + anmName + ".anm」の書き出し中にエラーが発生しました\n내보내기 중에 오류가 발생했습니다";
-					return false;
-				}
-			}
-			if (!isExist)
-			{
-				MotionWindow mw = GameObject.FindObjectOfType<MotionWindow>();
-				if (mw != null)
-				{
-					PopupAndTabList patl = mw.PopupAndTabList;
-					try
-					{
-						mw.AddMyPose(getPoseDataPath(true) + anmName + @".anm");
-					}
-					catch (Exception e)
-					{
-						Debug.LogError(e.ToString());
-					}
-				}
-			}
-
-			return true;
-		}
-
-        private void BoneDataBadd(bool short1, BoneDataB b ,BinaryReader r, BoneDataA a, bool tAdd, int t,int time)
-        {
-            //Debug.Log("BoneDataB short1 " + short1 + " tAdd "+ tAdd+" t "+ t);
-            //BoneDataB b = new BoneDataB();
-            if (tAdd) { b.index = t; }              
-            int tmpf = r.ReadByte();
-            r.ReadByte();
-            r.ReadByte();
-            r.ReadByte();
-            //C部分
-            bool firstFrame = true;
-            for (int i = 0; i < tmpf; i++)
+            using (BinaryWriter w = new BinaryWriter(File.Create(getPoseDataPath(true) + anmName + ".anm")))
             {
-                if (firstFrame)
+                try
                 {
-                    //Debug.Log("BoneDataB firstFrame");
-                    firstFrame = false;
-                    if (tAdd) {
-                        b.c = new List<BoneDataC>();
-                        BoneDataCadd(0, r, b);
-                    }
-                    else
+                    w.Write(header);
+                    foreach (BoneDataA a in bda)
                     {
-                        BoneDataCadd( time, r, b);
+                        w.Write(a.outputABinary());
                     }
-                    
+                    w.Write((byte)0);
+                    w.Write((byte)0);
+                    w.Write((byte)0);
                 }
-                else
+                catch (Exception)
                 {
-                    //Debug.Log("BoneDataB firstFrame else");
-                    if (short1)
-                    {
-                        r.ReadBytes(16);
-                    }
-                    else
-                    {
-                        BoneDataCadd(time, r, b);
-                    }
-
+                    errorFile = "モーション「" + anmName + ".anm」の書き出し中にエラーが発生しました\n내보내기 중에 오류가 발생했습니다";
+                    return false;
                 }
             }
-            if (tAdd) { a.b.Add(b); }                
+            if (!isExist)
+            {
+                MotionWindow mw = GameObject.FindObjectOfType<MotionWindow>();
+                if (mw != null)
+                {
+                    PopupAndTabList patl = mw.PopupAndTabList;
+                    try
+                    {
+                        mw.AddMyPose(getPoseDataPath(true) + anmName + @".anm");
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError(e.ToString());
+                    }
+                }
+            }
+
+            return true;
         }
 
+
+
         // 본처리 단순화
+        // BoneDataCadd(time, r, b);
         private void BoneDataCadd(int time, BinaryReader r, BoneDataB b)
         {
             BoneDataC bc = new BoneDataC();
@@ -580,14 +598,12 @@ namespace COM3D2.PoseStream.Plugin
                 byte[] header = new byte[15];
                 bool isFirst = true;
 
+                // 첫번째 포즈                
                 List<BoneDataA> bda = new List<BoneDataA>();
                 using (BinaryReader r = new BinaryReader(File.OpenRead(getPoseDataPath(true) + s)))
                 {
                     try
                     {
-                        //最初のファイルでヘッダー部分を決定
-                        //첫 번째 파일 헤더 부분을 결정
-                        //14바이트
                         for (int i = 0; i < 15; i++)
                         {
                             header[i] = r.ReadByte();
@@ -597,34 +613,28 @@ namespace COM3D2.PoseStream.Plugin
                         {
                             if (t == 1)
                             {
-                                //Debug.Log("isFirst t == 1");
+                                BoneDataA a = new BoneDataA();
                                 //A先頭部分
                                 //A 선두 부분
                                 t = r.ReadByte();
                                 byte c = 0;
-                                String name;
-                                bool isB = false;
                                 c = r.ReadByte();
                                 if (c == 1)
                                 {
-                                    isB = true;
-                                    name = "";
+                                    a.isB = true;
+                                    a.name = "";
                                 }
                                 else
                                 {
-                                    isB = false;
-                                    name = "" + (char)c;
+                                    a.isB = false;
+                                    a.name = "" + (char)c;
                                     t--;
                                 }
                                 for (int i = 0; i < t; i++)
                                 {
                                     c = r.ReadByte();
-                                    name += (char)c;
+                                    a.name += (char)c;
                                 }
-                                BoneDataA a = null;
-                                a = new BoneDataA();
-                                a.name = name;
-                                a.isB = isB;
                                 a.b = new List<BoneDataB>();
                                 //B部分
                                 while (true)
@@ -632,19 +642,40 @@ namespace COM3D2.PoseStream.Plugin
                                     t = r.ReadByte();
                                     if (t >= 64)
                                     {
-                                        BoneDataBadd(true, new BoneDataB(), r, a, true, t, 0);
+                                        BoneDataB b = new BoneDataB();
+                                        b.index = t;
+                                        int tmpf = r.ReadByte();
+                                        r.ReadByte();
+                                        r.ReadByte();
+                                        r.ReadByte();
+                                        //C部分
+                                        bool firstFrame = true;
+                                        for (int i = 0; i < tmpf; i++)
+                                        {
+                                            if (firstFrame)
+                                            {
+                                                firstFrame = false;
+                                                b.c = new List<BoneDataC>();
+
+                                                BoneDataCadd(0, r, b);
+                                            }
+                                            else
+                                            {
+                                                r.ReadBytes(16);
+                                            }
+                                        }
+                                        a.b.Add(b);
                                     }
                                     else
                                     {
                                         break;
                                     }
                                 }
-                                //Debug.Log("isFirst bda.Add(a)" );
+
                                 bda.Add(a);
                             }
                             else
                             {
-                                //Debug.Log("isFirst t == 1 else");
                                 break;
                             }
                         }
@@ -657,76 +688,12 @@ namespace COM3D2.PoseStream.Plugin
                     }
                 }
 
-                List<BoneDataA> bda2 = bda;
-                bda = new List<BoneDataA>();
-
+                // 두번째 포즈를 첫번째 포즈에 병합
                 using (BinaryReader r = new BinaryReader(File.OpenRead(getPoseDataPath(true) + s2)))
                 {
                     try
                     {
-                        //最初のファイルでヘッダー部分を決定
-                        //첫 번째 파일 헤더 부분을 결정
-                        //14바이트
-                        for (int i = 0; i < 15; i++)
-                        {
-                            header[i] = r.ReadByte();
-                        }
-                        byte t = r.ReadByte();
-                        while (true)
-                        {
-                            if (t == 1)
-                            {
-                                //Debug.Log("isFirst t == 1");
-                                //A先頭部分
-                                //A 선두 부분
-                                t = r.ReadByte();
-                                byte c = 0;
-                                String name;
-                                bool isB = false;
-                                c = r.ReadByte();
-                                if (c == 1)
-                                {
-                                    isB = true;
-                                    name = "";
-                                }
-                                else
-                                {
-                                    isB = false;
-                                    name = "" + (char)c;
-                                    t--;
-                                }
-                                for (int i = 0; i < t; i++)
-                                {
-                                    c = r.ReadByte();
-                                    name += (char)c;
-                                }
-                                BoneDataA a = null;
-                                a = new BoneDataA();
-                                a.name = name;
-                                a.isB = isB;
-                                a.b = new List<BoneDataB>();
-                                //B部分
-                                while (true)
-                                {
-                                    t = r.ReadByte();
-                                    if (t >= 64)
-                                    {
-                                        BoneDataBadd(true, new BoneDataB(), r, a, true, t, 0);
-                                    }
-                                    else
-                                    {
-                                        break;
-                                    }
-                                }
-                                //Debug.Log("isFirst bda.Add(a)" );
-                                bda.Add(a);
-                            }
-                            else
-                            {
-                                //Debug.Log("isFirst t == 1 else");
-                                break;
-                            }
-                        }
+
 
                     }
                     catch (Exception)
@@ -735,8 +702,8 @@ namespace COM3D2.PoseStream.Plugin
                         return false;
                     }
                 }
-                          
-                
+
+
 
                 int si = get00000000byInt2(s, s2);
                 Debug.Log("String si " + si);
@@ -955,6 +922,7 @@ namespace COM3D2.PoseStream.Plugin
 			}
 			return t;
 		}
+
 		private int get00000000byInt2(String s,String s2)
 		{
 			String cut = s.Substring(anmName.Length + 1, 8);
