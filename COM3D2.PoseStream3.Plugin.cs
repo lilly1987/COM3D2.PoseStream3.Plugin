@@ -23,10 +23,10 @@ namespace COM3D2.PoseStream.Plugin
 	///
 	/// </remarks>
 	///=========================================================================
-	[PluginFilter( "COM3D2x64" ), PluginName("COM3D2.PoseStream.Plugin"), PluginVersion( "1.1.0.0 edit by lilly 001" )]
+	[PluginFilter( "COM3D2x64" ), PluginName("COM3D2.PoseStream.Plugin"), PluginVersion( "1.1.0.0 edit by lilly 011" )]
 	public class PoseStream : PluginBase
 	{
-        public const string Label = "PoseStream 1.1.0.0 edit by lilly 001";
+        public const string Label = "PoseStream 1.1.0.0 edit by lilly 011";
         
         //PoseStream용 변수
 		//private bool isStudio = false;
@@ -309,7 +309,7 @@ namespace COM3D2.PoseStream.Plugin
 
                                         if (b == null)
                                         {
-                                            Debug.Log("BoneDataB null ");
+                                            //Debug.Log("BoneDataB null ");
                                             b = new BoneDataB();
                                             b.index = t;
                                             int tmpf = r.ReadByte();
@@ -338,7 +338,7 @@ namespace COM3D2.PoseStream.Plugin
 
                                         else
                                         {
-                                            Debug.Log("BoneDataB ");
+                                            //Debug.Log("BoneDataB ");
                                             int tmpf = r.ReadByte();
                                             r.ReadByte();
                                             r.ReadByte();
@@ -397,7 +397,7 @@ namespace COM3D2.PoseStream.Plugin
 			}
 			List<String> lf = new List<string>(files);
 			List<String> ps = new List<string>();
-            Debug.Log("PoseStream3 ps.Count : " + ps.Count);
+            //Debug.Log("PoseStream3 ps.Count : " + ps.Count);
            
             foreach (String s in lf)
 			{
@@ -464,6 +464,7 @@ namespace COM3D2.PoseStream.Plugin
             List<BoneDataA> bda = new List<BoneDataA>();
             byte[] header = new byte[15];
             bool isFirst = true;
+            int ntime = 0; // 누적시간
             //読み込み
             //읽기
             foreach (String s in ss)
@@ -1196,30 +1197,28 @@ namespace COM3D2.PoseStream.Plugin
                                                 //C部分
                                                 bool firstFrame = true;
                                                 for (int i = 0; i < tmpf; i++)
+                                                //for (int i = 0; i < 2; i++)
                                                 {
-                                                    if (firstFrame)
-                                                    {
-                                                        firstFrame = false;
+                                                    //if (firstFrame)
+                                                    //{
+                                                    //    firstFrame = false;
                                                         //BoneDataC bc = new BoneDataC();
                                                         r.ReadBytes(4);
                                                         byte[] raw= r.ReadBytes(12);
-                                                        for (int k = 0; k < b.c.Count; k++)
-                                                        {
-                                                            BoneDataC bc = b.c[k];
-                                                            bc.time = time;
-                                                            //time
+                                                        BoneDataC bc = b.c[i];
+                                                        bc.time = i;
+                                                        //time
+                                                        
+                                                        //raw
+                                                        bc.raw2 = raw;
+                                                        bc.rawMid();
+                                                        //b.c.Add(bc);
 
-                                                            //raw
-                                                            bc.raw2 = raw;
-                                                            bc.rawMid();
-                                                            //b.c.Add(bc);
-                                                        }
-
-                                                    }
-                                                    else
-                                                    {
-                                                        r.ReadBytes(16);
-                                                    }
+                                                    //}
+                                                    //else
+                                                    //{
+                                                    //    r.ReadBytes(16);
+                                                    //}
                                                 }
                                             }
                                         }
@@ -1288,7 +1287,7 @@ namespace COM3D2.PoseStream.Plugin
             bc.raw = r.ReadBytes(12);
             byte[] raw4 = null;
             Array.Copy(bc.raw, raw4, 4);
-            Debug.Log("BitConverter " + BitConverter.ToInt32(raw4, 0));
+            //Debug.Log("BitConverter " + BitConverter.ToInt32(raw4, 0));
             
             b.c.Add(bc);
         }
@@ -1300,7 +1299,7 @@ namespace COM3D2.PoseStream.Plugin
             byte[] raw4 = null;
             byte[] raw5 = null;
             Array.Copy(raw3, raw4, 4);
-            Debug.Log("b.c.Count " + b.c.Count);
+            //Debug.Log("b.c.Count " + b.c.Count);
             
             //BoneDataC bc = new BoneDataC();
             for (int i= 0; i < b.c.Count;i++)
@@ -1313,7 +1312,7 @@ namespace COM3D2.PoseStream.Plugin
                 //raw
                 bc.raw2 = raw3;
                 Array.Copy(bc.raw, raw5, 4);
-                Debug.Log("BitConverter " + BitConverter.ToInt32(raw4, 0)+" / " + BitConverter.ToInt32(raw5, 0));
+                //Debug.Log("BitConverter " + BitConverter.ToInt32(raw4, 0)+" / " + BitConverter.ToInt32(raw5, 0));
                 bc.rawMid();
                 //b.c.Add(bc);
             }
@@ -1406,12 +1405,11 @@ namespace COM3D2.PoseStream.Plugin
 			}
             public void rawMid()
 			{
-                for(int i=0; i < raw.Length; i++)
-                {
-                    //Debug.Log("raw " + i + " / " + raw[i] + " / " + raw2[i]);
-                    raw[i] = (byte)(raw[i] / 2 + raw2[i] / 2);                    
-                }
-			}
+                //Debug.Log("raw " + BitConverter.ToSingle(raw, 0) + " / " + BitConverter.ToSingle(raw2, 0));
+                raw=(BitConverter.GetBytes((float)(BitConverter.ToSingle(raw, 0) + BitConverter.ToSingle(raw2, 0))/2));
+                System.Array.Resize(ref raw, 12);
+                //Debug.Log("raw " + BitConverter.ToSingle(raw, 0) );
+            }
 
 
 		}
