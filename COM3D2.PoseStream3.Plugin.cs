@@ -581,6 +581,20 @@ namespace COM3D2.PoseStream.Plugin
             b.c.Add(bc);
         }
 
+        private void BoneDataCadd2(int time, BinaryReader r, BoneDataB b)
+        {
+            //BoneDataC bc = new BoneDataC();
+            BoneDataC bc = b.c[0];
+            bc.time2 = time;
+            //time
+            r.ReadBytes(4);
+            //raw
+            bc.raw2 = r.ReadBytes(12);
+            Debug.Log("b.c.Count "+b.c.Count);
+            bc.rawMid();
+            //b.c.Add(bc);
+        }
+
         // 실제 파일 생성. 중간 생성
         private bool makeAnmFile2(String[] ss)
 		{
@@ -600,7 +614,8 @@ namespace COM3D2.PoseStream.Plugin
 
                 // 첫번째 포즈                
                 List<BoneDataA> bda = new List<BoneDataA>();
-                using (BinaryReader r = new BinaryReader(File.OpenRead(getPoseDataPath(true) + s)))
+                using (BinaryReader r = new BinaryReader(File.OpenRead(getPoseDataPath(true) + s))
+                    ,  r2 = new BinaryReader(File.OpenRead(getPoseDataPath(true) + s2)))
                 {
                     try
                     {
@@ -691,15 +706,91 @@ namespace COM3D2.PoseStream.Plugin
                 // 두번째 포즈를 첫번째 포즈에 병합
                 using (BinaryReader r = new BinaryReader(File.OpenRead(getPoseDataPath(true) + s2)))
                 {
-                    try
+                    //最初以外はヘッダー部分を読み飛ばす
+                    //첫 이외는 헤더 부분을 건너
+                    r.ReadBytes(15);
+                    byte t = r.ReadByte();
+                    while (true)
                     {
-
-
-                    }
-                    catch (Exception)
-                    {
-                        errorFile = "ポーズ「" + s + "」の読み込み中にエラーが発生しました\n로드하는 동안 오류가 발생했습니다";
-                        return false;
+                        if (t == 1)
+                        {
+                            //A先頭部分
+                            //A 선두 부분
+                            t = r.ReadByte();
+                            byte c = 0;
+                            String name;
+                            bool isB = false;
+                            c = r.ReadByte();
+                            if (c == 1)
+                            {
+                                isB = true;
+                                name = "";
+                            }
+                            else
+                            {
+                                isB = false;
+                                name = "" + (char)c;
+                                t--;
+                            }
+                            for (int i = 0; i < t; i++)
+                            {
+                                c = r.ReadByte();
+                                name += (char)c;
+                            }
+                            BoneDataA a = null;
+                            foreach (BoneDataA tmp in bda)
+                            {
+                                if (tmp.name.Equals(name))
+                                {
+                                    a = tmp;
+                                    break;
+                                }
+                            }
+                            //B部分
+                            while (true)
+                            {
+                                t = r.ReadByte();
+                                if (t >= 64)
+                                {
+                                    BoneDataB b = null;
+                                    foreach (BoneDataB tmpb in a.b)
+                                    {
+                                        if (t == tmpb.index)
+                                        {
+                                            b = tmpb;
+                                            break;
+                                        }
+                                    }                                    
+                                    int tmpf = r.ReadByte();
+                                    r.ReadByte();
+                                    r.ReadByte();
+                                    r.ReadByte();
+                                    //C部分
+                                    bool firstFrame = true;
+                                    for (int i = 0; i < tmpf; i++)
+                                    {
+                                        if (firstFrame)
+                                        {
+                                            firstFrame = false;
+                                            Debug.Log("name "+name+" / "+ b.index);
+                                            BoneDataCadd2(0, r, b);
+                                        }
+                                        else
+                                        {
+                                            r.ReadBytes(16);
+                                        }
+                                    }                                    
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }                            
+                        }
+                        else
+                        {
+                            break;
+                        }
                     }
                 }
 
@@ -784,33 +875,7 @@ namespace COM3D2.PoseStream.Plugin
 				}
 				return lb.ToArray();
 			}
-            public byte[] outputABinary2()
-			{
-				List<byte> lb = new List<byte>();
-				//01
-				lb.Add(1);
-				//(ボーン名の長さ)
-				//(본 이름의 길이)
-				lb.Add((byte)(name.Length));
-				//[01](長いボーン名だとある？)
-				//[01](긴 뼈 이름이라고있다?)
-				if (isB)
-				{
-					lb.Add(1);
-				}
-				//ボーン名
-				char[] c = name.ToCharArray();
-				for (int i = 0; i < name.Length; i++)
-				{
-					lb.Add((byte)(c[i]));
-				}
-				//B
-				foreach(BoneDataB b1 in b)
-				{
-					lb.AddRange(b1.outputBBinary2());
-				}
-				return lb.ToArray();
-			}
+
 		}
 		private class BoneDataB
 		{
@@ -835,31 +900,12 @@ namespace COM3D2.PoseStream.Plugin
 				}
 				return lb.ToArray();
 			}
-            public byte[] outputBBinary2()
-			{
-				List<byte> lb = new List<byte>();
-				//XX(64から始まる)
-				//XX(64에서 시작)
-				lb.Add((byte)index);
-				//XX XX XX XX(フレーム数)
-				//XX XX XX XX(프레임 수)
-				lb.Add((byte)((c.Count) % 256));
-				lb.Add((byte)(((c.Count) / 256) % 256));
-				lb.Add((byte)((((c.Count) / 256) / 256) % 256));
-				lb.Add((byte)(((((c.Count) / 256) / 256) / 256) % 256));
-				//C
-				foreach (BoneDataC c1 in c)
-				{
-					lb.AddRange(c1.outputCBinary2());
-				}
-				return lb.ToArray();
-			}
 		}
 		private class BoneDataC
 		{
 			public int time = 0;
 			public int time2 = 0;
-			public byte[] raw = null;
+			public byte[] raw = null; //12바이트 실제 포즈값인듯
 			public byte[] raw2 = null;
 			public byte[] outputCBinary()
 			{
@@ -877,29 +923,16 @@ namespace COM3D2.PoseStream.Plugin
 				//データ
 				//데이터
 				lb.AddRange(raw);
-				return lb.ToArray();
+                //Debug.Log("BoneDataC lb " + lb.ToString());
+                return lb.ToArray();
 			}
-            public byte[] outputCBinary2()
+            public void rawMid()
 			{
-				List<byte> lb = new List<byte>();
-				float f = (time+ time2) /2/ 1000f;
-				byte[] b = new byte[4];
-				byte[] t = BitConverter.GetBytes(f);
-				b[0] = t[0];
-				b[1] = t[1];
-				b[2] = t[2];
-				b[3] = t[3];
-				//時間
-				//시간
-				lb.AddRange(b);
-				//データ
-				//데이터
                 for(int i=0; i < raw.Length; i++)
                 {
-                    raw[i] = (byte)((raw[i] + raw2[i]) / 2);
+                    Debug.Log("raw " + i + " / " + raw[i] + " / " + raw2[i]);
+                    raw[i] = (byte)((raw[i] + raw2[i]) / 2);                    
                 }
-				lb.AddRange(raw);
-				return lb.ToArray();
 			}
 
 
